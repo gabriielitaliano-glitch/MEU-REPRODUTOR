@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Meu Produtor</title>
+  <style>
+    body { font-family: Arial; margin:0; background:#f8fafc; }
+    header, nav, footer { background:#1e293b; color:white; padding:10px 20px; }
+    header h1 { display:inline-block; margin:0; }
+    nav button { margin-right:5px; padding:5px 10px; border:none; background:#334155; color:white; border-radius:5px; cursor:pointer; }
+    nav button.active { background:#0f172a; }
+    section { display:none; padding:20px; max-width:900px; margin:auto; background:white; border-radius:10px; margin-top:20px; }
+    input, select { padding:5px; margin:5px 0; }
+    .item { border-bottom:1px solid #ccc; padding:5px 0; }
+    button { cursor:pointer; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Meu Produtor 🌿</h1>
+  <button onclick="logout()" style="float:right;">Sair</button>
+</header>
+
+<nav>
+  <button onclick="showSection('inicio')" id="btn-inicio">Início</button>
+  <button onclick="showSection('rebanho')" id="btn-rebanho">Rebanho</button>
+  <button onclick="showSection('tarefas')" id="btn-tarefas">Tarefas</button>
+  <button onclick="showSection('relatorios')" id="btn-relatorios">Relatórios</button>
+</nav>
+
+<section id="inicio">
+  <h2>Bem-vindo(a)!</h2>
+  <p>Painel inicial de demonstração do manejo ovino/caprino.</p>
+</section>
+
+<section id="rebanho">
+  <h2>Rebanho</h2>
+  <div id="lista-animais"></div>
+  <h3>Adicionar Animal</h3>
+  <label>Identificação: <input id="new-id"></label><br>
+  <label>Espécie:
+    <select id="new-especie">
+      <option value="Ovelha">Ovelha</option>
+      <option value="Cabra">Cabra</option>
+    </select>
+  </label><br>
+  <label>Raça: <input id="new-raca"></label><br>
+  <label>Sexo:
+    <select id="new-sexo">
+      <option value="F">Fêmea</option>
+      <option value="M">Macho</option>
+    </select>
+  </label><br>
+  <label>Nascimento: <input type="date" id="new-nasc"></label><br>
+  <label>Observações: <input id="new-obs"></label><br><br>
+  <button onclick="addAnimal()">Adicionar Animal</button>
+</section>
+
+<section id="tarefas">
+  <h2>Tarefas</h2>
+  <div id="lista-tarefas"></div>
+  <h3>Adicionar Tarefa</h3>
+  <input id="new-task" placeholder="Nova tarefa">
+  <button onclick="addTask()">Adicionar</button>
+</section>
+
+<section id="relatorios">
+  <h2>Relatórios</h2>
+  <div id="report"></div>
+</section>
+
+<footer style="text-align:center; padding:10px; background:#1e293b; color:white;">
+  Criado por: Mariana, Alan, Giovanna, Flávia, Gabriele
+</footer>
+
+<script>
+  const defaultUsers = [{username:"mariana", password:"mariana123"}];
+  if(!localStorage.getItem('user')) localStorage.setItem('user', JSON.stringify(defaultUsers[0]));
+
+  let db = JSON.parse(localStorage.getItem('meu-produtor-db')||'{"animals":[],"tasks":[]}');
+
+  function showSection(id){
+    document.querySelectorAll('section').forEach(s=>s.style.display='none');
+    document.getElementById(id).style.display='block';
+    document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+    document.getElementById('btn-'+id).classList.add('active');
+    if(id==='rebanho') updateAnimals();
+    if(id==='tarefas') updateTasks();
+    if(id==='relatorios') updateReports();
+  }
+
+  function logout(){ alert("Sair do sistema!"); }
+
+  function addAnimal(){
+    const a={
+      id: document.getElementById('new-id').value || `X-${Math.floor(Math.random()*9999)}`,
+      especie: document.getElementById('new-especie').value,
+      raca: document.getElementById('new-raca').value||'—',
+      sexo: document.getElementById('new-sexo').value,
+      nascimento: document.getElementById('new-nasc').value||'—',
+      obs: document.getElementById('new-obs').value||'—'
+    };
+    db.animals.push(a);
+    localStorage.setItem('meu-produtor-db', JSON.stringify(db));
+    updateAnimals();
+  }
+
+  function addTask(){
+    const t=document.getElementById('new-task').value.trim();
+    if(!t){alert('Digite uma tarefa'); return;}
+    db.tasks.push({text:t, done:false});
+    localStorage.setItem('meu-produtor-db', JSON.stringify(db));
+    document.getElementById('new-task').value='';
+    updateTasks();
+  }
+
+  function updateAnimals(){
+    const lista=document.getElementById('lista-animais');
+    lista.innerHTML='';
+    db.animals.forEach(a=>{
+      lista.innerHTML+=`<div class="item"><b>${a.id}</b> — ${a.especie} ${a.raca} (${a.sexo}) | Nasc: ${a.nascimento} | Obs: ${a.obs}</div>`;
+    });
+  }
+
+  function updateTasks(){
+    const lista=document.getElementById('lista-tarefas');
+    lista.innerHTML='';
+    if(db.tasks.length===0) lista.innerHTML='<p>Nenhuma tarefa cadastrada.</p>';
+    db.tasks.forEach((t,i)=>{
+      lista.innerHTML+=`<div class="item">${t.text} <button onclick="toggleTask(${i})">${t.done?'Desmarcar':'Concluir'}</button></div>`;
+    });
+  }
+
+  function toggleTask(i){
+    db.tasks[i].done=!db.tasks[i].done;
+    localStorage.setItem('meu-produtor-db',JSON.stringify(db));
+    updateTasks();
+  }
+
+  function updateReports(){
+    document.getElementById('report').innerHTML=`<p>Total de animais: <b>${db.animals.length}</b></p>
+      <p>Total de tarefas: <b>${db.tasks.length}</b></p>
+      <p>Total de usuários demo: <b>${defaultUsers.length}</b></p>`;
+  }
+
+  window.onload=()=>showSection('inicio');
+</script>
+
+</body>
+</html>
